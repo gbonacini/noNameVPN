@@ -1,0 +1,56 @@
+.TH NNVPN 1 "OCTOBER 2023" Linux "User Manuals"                                  
+.SH NAME                                                                     
+nnvpn \- Nnvpn is a VPN implementation using OpenSSL and Linux TUN devices.
+.SH SYNOPSIS                                                                 
+.B  nnvpn [-f config_path] [-s]
+   [-d level]
+   [-h] 
+.SH DESCRIPTION                                                              
+.B nnvpn 
+this program implements a basic VPN based on two Linux computers, using OpenSSL for the cryptographic layer. 
+
+A configuration file using LUA syntax must be provided to configure server and client conection parameters.
+
+The program requires  cap_net_admin+ep capability, root user is not allowed.
+
+.SH DISCLAIMERS
+At the moment, This program is intended experimental.
+
+.SH OPTIONS                                                       
+.IP -f configuration_path
+Specifies the full path related to the configuration file.
+.IP -s
+Server mode. If this option is specified, the program acts as server and not as client (default mode).
+.IP -d level
+Specifies debugging lev el (0-2).
+.IP -h
+A short description of arpchatcpp command line syntax.
+.SH CONFIGURATION
+This section explains the LUA configuration file syntax:
+.IP Addess section
+it specifies as string the server listening IP address or the remote server address in case of client mode, example:
+.B  address = "192.168.0.111"
+.IP Port section
+it specifies as number the server listening IP port or the remote server port in case of client mode, example:
+.B  port = 8181
+.IP Certificate section
+it specifies the path of OpenSSL pem file, example:
+.B  cert = "/home/test/.keys/server.pem"
+.IP Key section
+it specifies the path of OpenSSL key file, example:
+.B  key = "/home/test/.keys/server.key"
+.IP Device section
+it specifies as string the name of TUN device, example:
+.B  device = "tun222"
+.IP Psize section
+it specifies as number the max payload size, it must be a multiple of 1500
+.B  psize = 3000
+.IP Log section
+it specifies as string name and path of the required log file, example:
+.B  log = "/tmp/nnvpn.log"
+.SH BUGS                                                                     
+This program is experimental, massive changes are possible.
+.SH AUTHOR                                                                   
+Gabriele Bonacini <gabriele.bonacini@protonmail.com>
+.SH "SEE ALSO"                                                               
+ OpenSSL, TUN.

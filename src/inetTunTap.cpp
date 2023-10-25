@@ -22,6 +22,7 @@
 #include <sys/ioctl.h>
 
 #include <algorithm>
+#include <iostream>
 
 #include <inetgeneral.hpp>
 #include <StringUtils.hpp>
@@ -31,6 +32,7 @@ namespace inetlib{
 
 using std::copy,
       std::string,
+      std::cerr,
       std::to_string,
       inetlib::InetException,
       typeutils::safeSizeRange,
@@ -167,77 +169,83 @@ void  NnVpnServer::init(void) anyexcept{
 }
 
 void  NnVpnServer::start(void) anyexcept{
-    sslServer.listen();
-    sslServer.accept();
-
-    int        tunFd       { getTunFd() },
-               sslFd       { sslServer.getFdReader() }; 
-    const SSL* cSSL        { sslServer.getHandler().cSSL };
-    fd_set     fdsetTun;
-
-    nfdsTun = (tunFd > sslFd) ? tunFd + 1 : sslFd + 1;
-
     for(;;){
-           FD_ZERO(&fdsetTun); 
-           FD_SET(tunFd, &fdsetTun);
-           FD_SET(sslFd, &fdsetTun);
-  
-           ssize_t ret {::select(nfdsTun, &fdsetTun, nullptr, nullptr, nullptr)};
-           switch(ret){
-              [[unlikely]] case -1:
-                 throw InetException("NnVpnServer::start : Select Error.");
-              [[unlikely]] case  0:
-                 throw InetException("NnVpnServer::start : Select Timeout.");
-              [[likely]]   default:
-                  if(FD_ISSET(tunFd, &fdsetTun)) {
-                      ssize_t readFromTun { read(tunFd, buff.data(), buff.size()) };
-                      switch(readFromTun){
-                         [[unlikely]] case 0:
-                            throw InetException("NnVpnServer::start : Connection Closed by peer.");
-                         break;
-                         [[unlikely]] case -1:
-                            throw InetException(mergeStrings({"NnVpnServer::start : Read error: ", strerror(errno)}));
-                         [[likely]]   default:
-                            ssize_t written { 0 };
-                            while( written < readFromTun){
-                                int nbytes { sslServer.writeSSLBuffer(buff.data() + written, safeSizeRange<int>(readFromTun - written))};
-                                if( nbytes <= 0) {
-                                    int errCode = SSL_get_error(cSSL, nbytes);
-                                    switch(errCode){
-                                       case SSL_ERROR_WANT_WRITE:
-                                       case SSL_ERROR_WANT_ASYNC_JOB:
-                                               continue;
-                                       default:
-                                               throw InetException(mergeStrings({"NnVpnClient::start : writeSSL error : ", to_string(errCode)}));
+        try{
+           sslServer.listen();
+           sslServer.accept();
+    
+           int        tunFd       { getTunFd() },
+                      sslFd       { sslServer.getFdReader() }; 
+           const SSL* cSSL        { sslServer.getHandler().cSSL };
+           fd_set     fdsetTun;
+    
+           nfdsTun = (tunFd > sslFd) ? tunFd + 1 : sslFd + 1;
+    
+           for(;;){
+               FD_ZERO(&fdsetTun); 
+               FD_SET(tunFd, &fdsetTun);
+               FD_SET(sslFd, &fdsetTun);
+      
+               ssize_t ret {::select(nfdsTun, &fdsetTun, nullptr, nullptr, nullptr)};
+               switch(ret){
+                  [[unlikely]] case -1:
+                     throw InetException("NnVpnServer::start : Select Error.");
+                  [[unlikely]] case  0:
+                     throw InetException("NnVpnServer::start : Select Timeout.");
+                  [[likely]]   default:
+                      if(FD_ISSET(tunFd, &fdsetTun)) {
+                          ssize_t readFromTun { read(tunFd, buff.data(), buff.size()) };
+                          switch(readFromTun){
+                             [[unlikely]] case 0:
+                                throw InetException("NnVpnServer::start : Connection Closed by peer.");
+                             break;
+                             [[unlikely]] case -1:
+                                throw InetException(mergeStrings({"NnVpnServer::start : Read error: ", strerror(errno)}));
+                             [[likely]]   default:
+                                ssize_t written { 0 };
+                                while( written < readFromTun){
+                                    int nbytes { sslServer.writeSSLBuffer(buff.data() + written, safeSizeRange<int>(readFromTun - written))};
+                                    if( nbytes <= 0) {
+                                        int errCode = SSL_get_error(cSSL, nbytes);
+                                        switch(errCode){
+                                           case SSL_ERROR_WANT_WRITE:
+                                           case SSL_ERROR_WANT_ASYNC_JOB:
+                                                   continue;
+                                           default:
+                                                   throw InetException(mergeStrings({"NnVpnClient::start : writeSSL error : ", to_string(errCode)}));
+                                        }
                                     }
+                                    written += nbytes;
                                 }
-                                written += nbytes;
-                            }
+                          }
                       }
-                  }
-                  if(FD_ISSET(sslFd, &fdsetTun)) {
-                      int readFromSsl { sslServer.readSSLBuffer(buff.data(), safeSizeRange<int>(buff.size()))};
-                      if( readFromSsl <= 0) {
-                           int errCode { SSL_get_error(cSSL, readFromSsl) };
-                           switch(errCode){
-                               case SSL_ERROR_WANT_READ:
-                               case SSL_ERROR_WANT_ASYNC_JOB:
-                                    continue;
-                               default:
-                                    throw InetException(mergeStrings({"NnVpnClient::start : readSSL error : ", to_string(errCode)}));
-                           }
+                      if(FD_ISSET(sslFd, &fdsetTun)) {
+                          int readFromSsl { sslServer.readSSLBuffer(buff.data(), safeSizeRange<int>(buff.size()))};
+                          if( readFromSsl <= 0) {
+                               int errCode { SSL_get_error(cSSL, readFromSsl) };
+                               switch(errCode){
+                                   case SSL_ERROR_WANT_READ:
+                                   case SSL_ERROR_WANT_ASYNC_JOB:
+                                        continue;
+                                   default:
+                                        throw InetException(mergeStrings({"NnVpnClient::start : readSSL error : ", to_string(errCode)}));
+                               }
+                          }
+                          ssize_t written { 0 };
+                          while( written < readFromSsl){
+                               ssize_t nbytes { write(tunFd, buff.data() + written, safeSizeRange<int>(readFromSsl - written))};
+                               if( nbytes <= 0) {
+                                  if (errno == EINTR || errno == EAGAIN) continue;
+                                  throw InetException(mergeStrings({"NnVpnClient::start : write error : ", strerror(errno)}));
+                               }
+                               written += nbytes;
+                          }
                       }
-                      ssize_t written { 0 };
-                      while( written < readFromSsl){
-                           ssize_t nbytes { write(tunFd, buff.data() + written, safeSizeRange<int>(readFromSsl - written))};
-                           if( nbytes <= 0) {
-                              if (errno == EINTR || errno == EAGAIN) continue;
-                              throw InetException(mergeStrings({"NnVpnClient::start : write error : ", strerror(errno)}));
-                           }
-                           written += nbytes;
-                      }
-                  }
+                }
             }
+        } catch(InetException& ex){
+               cerr << mergeStrings({ "NnVpnServer::start() : Caught Exception : ", ex.what(), " -> restart loop\n" });
+        }
     }
 }
 

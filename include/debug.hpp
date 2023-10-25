@@ -22,7 +22,11 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
-#include <mutex>
+
+#ifdef MT_DEBUG
+    #include <mutex>
+#endif 
+
 #include <anyexcept.hpp>
 
 namespace debugmode {
@@ -30,10 +34,8 @@ namespace debugmode {
     enum DEBUG_MODE : unsigned long { ERR_DEBUG=0, STD_DEBUG=1, VERBOSE_DEBUG=2 };
 
     class Debug{
-        private:
+        protected:
             static inline DEBUG_MODE   debug_mode { DEBUG_MODE::STD_DEBUG };
-            static inline std::mutex   logMtx,
-                                       screenMtx;
 
         public:
             explicit          Debug(DEBUG_MODE level = ERR_DEBUG)                             noexcept;
@@ -63,6 +65,41 @@ namespace debugmode {
                                    size_t end,
                                    size_t max)                                                noexcept;
     };
+
+    #ifdef MT_DEBUG
+
+    class DebugMt : public Debug{
+        private:
+            static inline std::mutex   logMtx,
+                                       screenMtx;
+
+        public:
+            explicit          DebugMt(DEBUG_MODE level = ERR_DEBUG)                           noexcept;
+
+            static void       printLog(const std::string& msg, DEBUG_MODE minLevel)           noexcept ;
+            static void       printLog(const char* const msg, DEBUG_MODE minLevel)            noexcept ;
+            static void       trace(const char* header,
+                                    const uint8_t* buff,
+                                    const size_t size,
+                                    size_t begin,
+                                    size_t end)                                               noexcept;
+            static void       trace(const std::string& header,
+                                   const std::vector<uint8_t>* buff,
+                                   size_t begin,
+                                   size_t end,
+                                   size_t max)                                                noexcept;
+            static void       traceStdout(const char* header,
+                                    const uint8_t* buff,
+                                    const size_t size,
+                                    size_t begin,
+                                    size_t end)                                               noexcept;
+            static void       traceStdout(const std::string& header,
+                                   const std::vector<uint8_t>* buff,
+                                   size_t begin,
+                                   size_t end,
+                                   size_t max)                                                noexcept;
+    };
+    #endif
 
     class DebugException final : public std::exception {
         public:

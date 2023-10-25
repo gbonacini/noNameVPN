@@ -19,7 +19,6 @@
 #include <debug.hpp>
 #include <StringUtils.hpp>
 
-
 namespace debugmode {
 
    using std::string,
@@ -51,23 +50,14 @@ namespace debugmode {
    }
 
    void Debug::printLog(const string& msg, DEBUG_MODE minLevel) noexcept {
-         if(Debug::debug_mode >= minLevel){
-             Debug::logMtx.lock();
-             cerr << msg << '\n';
-             Debug::logMtx.unlock();
-         }
+         if(Debug::debug_mode >= minLevel) cerr << msg << '\n';
    }
 
    void Debug::printLog(const char* const msg, DEBUG_MODE minLevel) noexcept {
-         if(Debug::debug_mode >= minLevel){
-            Debug::logMtx.lock();
-            cerr << msg << '\n';
-            Debug::logMtx.unlock();
-         }
+         if(Debug::debug_mode >= minLevel) cerr << msg << '\n';
    }
 
    void Debug::trace(const char* header, const uint8_t* buff, const size_t size, size_t begin, size_t end) noexcept{
-                Debug::logMtx.lock();
                 cerr << '\n' << header << "\n\n";
 
                 bool last  { false },
@@ -102,11 +92,9 @@ namespace debugmode {
                    cerr << '\n';
                 }
                 cerr << "\n\n";
-                Debug::logMtx.unlock();
    }
 
    void Debug::trace(const string& header, const vector<uint8_t>* buff, size_t begin, size_t end, size_t max) noexcept{
-            Debug::logMtx.lock();
             cerr << '\n' << header << "\n\n";
 
             size_t len    { max ? max : buff->size() };
@@ -143,11 +131,9 @@ namespace debugmode {
             }
 
             cerr << "\n\n";
-            Debug::logMtx.unlock();
    }
 
    void Debug::traceStdout(const char* header, const uint8_t* buff, const size_t size, size_t begin, size_t end) noexcept{
-                Debug::screenMtx.lock();
                 cout << '\n' << header << "\n\n";
 
                 bool last  { false },
@@ -182,11 +168,9 @@ namespace debugmode {
                    cout << '\n';
                 }
                 cout << "\n\n";
-                Debug::screenMtx.unlock();
    }
 
    void Debug::traceStdout(const string& header, const vector<uint8_t>* buff, size_t begin, size_t end, size_t max) noexcept{
-            Debug::screenMtx.lock();
             cout << '\n' << header << "\n\n";
 
             size_t len    { max ? max : buff->size() };
@@ -223,8 +207,55 @@ namespace debugmode {
             }
 
             cout << "\n\n";
-            Debug::screenMtx.unlock();
    }
+
+   #ifdef MT_DEBUG
+
+   DebugMt::DebugMt(DEBUG_MODE level = ERR_DEBUG)  noexcept
+       : Debug{level}   
+   {}
+
+   void DebugMt::printLog(const string& msg, DEBUG_MODE minLevel) noexcept {
+         if(Debug::debug_mode >= minLevel){
+             DebugMt::logMtx.lock();
+             cerr << msg << '\n';
+             DebugMt::logMtx.unlock();
+         }
+   }
+
+   void DebugMt::printLog(const char* const msg, DEBUG_MODE minLevel) noexcept {
+         if(Debug::debug_mode >= minLevel){
+            DebugMt::logMtx.lock();
+            cerr << msg << '\n';
+            DebugMt::logMtx.unlock();
+         }
+   }
+
+   void DebugMt::trace(const char* header, const uint8_t* buff, const size_t size, size_t begin, size_t end) noexcept{
+                DebugMt::logMtx.lock();
+                Debug::trace(header, buff, size, begin, end);
+                DebugMt::logMtx.unlock();
+   }
+
+   void DebugMt::trace(const string& header, const vector<uint8_t>* buff, size_t begin, size_t end, size_t max) noexcept{
+            DebugMt::logMtx.lock();
+            Debug::trace(header, buff, begin, end, max);
+            DebugMt::logMtx.unlock();
+   }
+
+   void DebugMt::traceStdout(const char* header, const uint8_t* buff, const size_t size, size_t begin, size_t end) noexcept{
+            DebugMt::screenMtx.lock();
+            Debug::traceStdout(header, buff, size, begin, end);
+            DebugMt::screenMtx.unlock();
+   }
+
+   void DebugMt::traceStdout(const string& header, const vector<uint8_t>* buff, size_t begin, size_t end, size_t max) noexcept{
+            DebugMt::screenMtx.lock();
+            Debug::traceStdout(header, buff, begin, end, max);
+            DebugMt::screenMtx.unlock();
+   }
+
+   #endif
 
    DebugException::DebugException(string& errString)
         : errorMessage{errString}

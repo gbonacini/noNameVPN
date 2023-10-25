@@ -145,13 +145,13 @@ int main(int argc, char** argv){
 
          try{
              if(isServer){
-                  NnVpnServer tvpns(cert, key, address, to_string(port), device, psize);
-                  tvpns.init();
-                  tvpns.start();
+                  NnVpnServer svpn(cert, key, address, to_string(port), device, psize);
+                  svpn.init();
+                  svpn.start();
              } else {
-                  NnVpnClient tvpnc(cert, key, address, to_string(port), device, psize);;
-                  tvpnc.init();
-                  tvpnc.start();
+                  NnVpnClient cvpn(cert, key, address, to_string(port), device, psize);;
+                  cvpn.init();
+                  cvpn.start();
              }
          }catch(InetException& ex){
              ret = 3;

@@ -136,10 +136,12 @@ namespace inetlib{
 
     void InetServerSSL::cleanResurces(void) noexcept{
         disconnect();
-        
-        if(*(handler.peerFd) >= 0 ){
-            close(*(handler.peerFd));
-            *(handler.peerFd) = -1;
+
+        if(handler.peerFd != nullptr){ 
+            if(*(handler.peerFd) >= 0 ){
+                close(*(handler.peerFd));
+                *(handler.peerFd) = -1;
+            }
         }
     }
 

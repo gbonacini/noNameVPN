@@ -162,7 +162,26 @@ namespace inetlib{
         handler.cSSL   = SSL_new(InetSSL::sslctx);
 
         SSL_set_fd(handler.cSSL, *(handler.peerFd));
-        if(SSL_accept(handler.cSSL) <= 0) throw InetException("SSL accept error.");
+        bool isAccepted { false };
+        while(!isAccepted){
+            int aRet { SSL_accept(handler.cSSL) };
+            switch (aRet) {
+                case 1:
+                    isAccepted = true;
+                break;
+                case 0:
+                    throw InetException("InetServerSSL::accept : Connection Closed by peer.");
+                default:
+                    int errCode { SSL_get_error(handler.cSSL, aRet) };
+                    switch(errCode){
+                            case SSL_ERROR_WANT_WRITE:
+                            case SSL_ERROR_WANT_ASYNC_JOB:
+                                 continue;
+                            default:
+                                 throw InetException(mergeStrings({"InetServerSSL::accept : SSL_connect error : ", to_string(errCode)}));
+                    }
+            }
+        }
     }
 
     void InetServerSSL::disconnect(void) anyexcept {

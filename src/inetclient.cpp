@@ -25,6 +25,7 @@
 
 namespace inetlib{
     using std::string,
+          std::to_string,
           typeutils::safeSizeRange,
 	      stringutils::mergeStrings;
 

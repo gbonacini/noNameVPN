@@ -47,22 +47,6 @@ AX_LUA_HEADERS
 
 AC_CANONICAL_HOST
 case $host_os in
-  darwin* )
-              OPTIMIZATION=-O3
-              if test "x$_DEBUG_MEM_" = xyes; then
-                        OPTIMIZATION=-O0
-              fi
-              if test "x$CC" = xgcc; then
-                    CPPFLAGS=" -g -Wextra -Wall -std=c++20 -Wno-deprecated-declarations \
-                             -D_FORTIFY_SOURCE=2 ${OPTIMIZATION} -fstack-protector \
-                             -I/usr/local/ssl/include/ \
-                             --param=ssp-buffer-size=4 -Wformat -Werror=format-security ${INC_SSL_CUSTOM}"
-                    LDFLAGS="-lresolv ${LIB_SSL_CUSTOM}"
-              else
-                    CPPFLAGS=" ${OPTIMIZATION} -g -Wall "
-              fi
-
-        ;;
   linux*)
               OPTIMIZATION=-O3
               if test "x$_DEBUG_MEM" = xyes; then
@@ -78,10 +62,7 @@ case $host_os in
               fi
         ;;
     *)
-            OPTIMIZATION=-O3
-            CPPFLAGS=" ${OPTIMIZATION} -g -Wall "
-            LDFLAGS="-lresolv  ${LIB_SSL_CUSTOM}"
-            #AC_MSG_ERROR([Your platform is not currently supported])
+            AC_MSG_ERROR([Your platform is not currently supported])
         ;;
 esac
 

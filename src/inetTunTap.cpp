@@ -111,7 +111,7 @@ void  NnVpnClient::start(void) anyexcept{
                             throw InetException("NnVpnClient::start : Connection Closed by peer.");
                          break;
                          [[unlikely]]  case -1:
-                            throw InetException(mergeStrings({"NnVpnClient::start : Read error: ", strerror(errno)}));
+                            throw InetException(mergeStrings({"NnVpnClient::start : TUN Read error: ", strerror(errno)}));
                          [[likely]]    default:
                             ssize_t written { 0 };
                             while( written < readFromTun){
@@ -147,7 +147,7 @@ void  NnVpnClient::start(void) anyexcept{
                           ssize_t nbytes { write(tunFd, buff.data() + written, readFromSsl - written) };
                           if( nbytes <= 0) {
                               if (errno == EINTR || errno == EAGAIN) continue;
-                              throw InetException(mergeStrings({"NnVpnClient::start : write error : ", strerror(errno)}));
+                              throw InetException(mergeStrings({"NnVpnClient::start : TUN write error : ", strerror(errno)}));
                           }
                           written += nbytes;
                       }
@@ -205,7 +205,7 @@ void  NnVpnServer::start(void) anyexcept{
                                 throw InetException("NnVpnServer::start : Connection Closed by peer.");
                              break;
                              [[unlikely]] case -1:
-                                throw InetException(mergeStrings({"NnVpnServer::start : Read error: ", strerror(errno)}));
+                                throw InetException(mergeStrings({"NnVpnServer::start : TUN Read error: ", strerror(errno)}));
                              [[likely]]   default:
                                 ssize_t written { 0 };
                                 while( written < readFromTun){
@@ -217,7 +217,7 @@ void  NnVpnServer::start(void) anyexcept{
                                            case SSL_ERROR_WANT_ASYNC_JOB:
                                                    continue;
                                            default:
-                                                   throw InetException(mergeStrings({"NnVpnClient::start : writeSSL error : ", to_string(errCode)}));
+                                                   throw InetException(mergeStrings({"NnVpnServer::start : writeSSL error : ", to_string(errCode)}));
                                         }
                                     }
                                     written += nbytes;
@@ -233,9 +233,9 @@ void  NnVpnServer::start(void) anyexcept{
                                    case SSL_ERROR_WANT_ASYNC_JOB:
                                         continue;
                                    case SSL_ERROR_SYSCALL:
-                                        throw InetException(mergeStrings({"NnVpnClient::start : readSSL error : ", to_string(errCode), " : suberror : ", strerror(errno)}));
+                                        throw InetException(mergeStrings({"NnVpnServer::start : readSSL error : ", to_string(errCode), " : suberror : ", strerror(errno)}));
                                    default:
-                                        throw InetException(mergeStrings({"NnVpnClient::start : readSSL error : ", to_string(errCode)}));
+                                        throw InetException(mergeStrings({"NnVpnServer::start : readSSL error : ", to_string(errCode)}));
                                }
                           }
                           ssize_t written { 0 };
@@ -243,7 +243,7 @@ void  NnVpnServer::start(void) anyexcept{
                                ssize_t nbytes { write(tunFd, buff.data() + written, safeSizeRange<int>(readFromSsl - written))};
                                if( nbytes <= 0) {
                                   if (errno == EINTR || errno == EAGAIN) continue;
-                                  throw InetException(mergeStrings({"NnVpnClient::start : write error : ", strerror(errno)}));
+                                  throw InetException(mergeStrings({"NnVpnServer::start : TUN write error : ", strerror(errno)}));
                                }
                                written += nbytes;
                           }

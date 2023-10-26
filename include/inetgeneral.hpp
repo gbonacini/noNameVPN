@@ -198,9 +198,6 @@ namespace inetlib {
 
         private:
             void         cleanResurces(void)                                  noexcept;
-
-            friend void  createThreadCpp(size_t idx)                          noexcept;
-            friend void  createThreadSSL(size_t idx);
     };
 
     class InetSSL{
@@ -216,9 +213,6 @@ namespace inetlib {
             std::string    SSLcertificate,
                            SSLkey;
             static inline  SSL_CTX* sslctx { nullptr };
-
-        private:
-            friend void createThreadSSL(size_t idx);
     };
 
     class InetClientSSL : public InetClient, public InetSSL {
@@ -264,8 +258,6 @@ namespace inetlib {
 
         private:
             void cleanResurces(void)                                       noexcept;
-
-            friend void createThreadSSL(size_t idx);
     };
 
     class Tun{

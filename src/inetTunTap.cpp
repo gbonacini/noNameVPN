@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <signal.h>
 
 #include <algorithm>
 #include <iostream>
@@ -50,6 +51,7 @@ Tun::Tun(string dev)  anyexcept
  }
 
 void Tun::init(void)  anyexcept{
+    signal(SIGPIPE, SIG_IGN);
     tunfd = open(cloneDev.c_str(),  O_RDWR | O_CLOEXEC );
     if( tunfd < 0)
         throw( InetException( mergeStrings({ "Error opening TUN cloning device: ", strerror(errno)}) ) );
@@ -169,15 +171,18 @@ void  NnVpnServer::init(void) anyexcept{
 }
 
 void  NnVpnServer::start(void) anyexcept{
+
+    sslServer.listen();
+
+    int        tunFd       { getTunFd() };
+    fd_set     fdsetTun;
+
     for(;;){
         try{
-           sslServer.listen();
            sslServer.accept();
     
-           int        tunFd       { getTunFd() },
-                      sslFd       { sslServer.getFdReader() }; 
+           int        sslFd       { sslServer.getFdReader() }; 
            const SSL* cSSL        { sslServer.getHandler().cSSL };
-           fd_set     fdsetTun;
     
            nfdsTun = (tunFd > sslFd) ? tunFd + 1 : sslFd + 1;
     
@@ -227,6 +232,8 @@ void  NnVpnServer::start(void) anyexcept{
                                    case SSL_ERROR_WANT_READ:
                                    case SSL_ERROR_WANT_ASYNC_JOB:
                                         continue;
+                                   case SSL_ERROR_SYSCALL:
+                                        throw InetException(mergeStrings({"NnVpnClient::start : readSSL error : ", to_string(errCode), " : suberror : ", strerror(errno)}));
                                    default:
                                         throw InetException(mergeStrings({"NnVpnClient::start : readSSL error : ", to_string(errCode)}));
                                }
@@ -246,6 +253,8 @@ void  NnVpnServer::start(void) anyexcept{
         } catch(InetException& ex){
                cerr << mergeStrings({ "NnVpnServer::start() : Caught Exception : ", ex.what(), " -> restart loop\n" });
         }
+
+        sslServer.disconnect();
     }
 }
 

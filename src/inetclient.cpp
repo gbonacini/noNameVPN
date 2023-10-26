@@ -92,8 +92,26 @@ namespace inetlib{
         handler.cSSL = SSL_new(InetSSL::sslctx);
         
         SSL_set_fd(handler.cSSL, *(handler.peerFd));
-        if(SSL_connect(handler.cSSL) <= 0)
-             throw InetException("SSL connect error.");
+        bool isConnected { false };
+        while(!isConnected){
+            int cRet { SSL_connect(handler.cSSL) };
+            switch (cRet) {
+                case 1:
+                    isConnected = true;
+                break;
+                case 0:
+                    throw InetException("InetClientSSL::init : Connection Closed by peer.");
+                default:
+                    int errCode { SSL_get_error(handler.cSSL, cRet) };
+                    switch(errCode){
+                            case SSL_ERROR_WANT_WRITE:
+                            case SSL_ERROR_WANT_ASYNC_JOB:
+                                 continue;
+                            default:
+                                 throw InetException(mergeStrings({"InetClientSSL::init : SSL_connect error : ", to_string(errCode)}));
+                    }
+            }
+        }
 	}
 
     void InetClientSSL::cleanResurces(void) noexcept{

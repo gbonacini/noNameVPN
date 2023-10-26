@@ -79,7 +79,10 @@ namespace inetlib{
 	                             readFunc rFx, writeFunc wFx) anyexcept
        : InetClient(ifc, port, rFx, wFx),
          InetSSL(cert, key)
-    {}
+    {
+        if(access(cert.c_str(), R_OK) != 0) throw InetException(mergeStrings({"InetServerSSL : Certificate File Access : ", strerror(errno)}));
+        if(access(key.c_str(),  R_OK) != 0) throw InetException(mergeStrings({"InetServerSSL : Key File Access : ", strerror(errno)}));
+    }
 
     void InetClientSSL::init(void) anyexcept{
         InetClient::init();

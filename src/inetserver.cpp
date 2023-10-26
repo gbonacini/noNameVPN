@@ -15,8 +15,6 @@
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 // -----------------------------------------------------------------
 
-#include <sys/stat.h>
-
 #include <inetgeneral.hpp>
 #include <StringUtils.hpp>
 #include <Types.hpp>
@@ -27,8 +25,6 @@ namespace inetlib{
           std::to_string,
           typeutils::safeSizeRange,
 	      stringutils::mergeStrings;
-
-    using Stat=struct stat;
 
     InetServer::InetServer(readFunc  rFx, writeFunc wFx)  
 	    : Inet::Inet(rFx, wFx)
@@ -117,9 +113,8 @@ namespace inetlib{
     InetServerSSL::InetServerSSL(string cert, string key) anyexcept 
       : InetSSL(cert, key)
     {
-        Stat statBuf {}; // TODO: check permissions : 600
-        if(stat(cert.c_str(), &statBuf) != 0) throw InetException(mergeStrings({"InetServerSSL : Certificate File : ", strerror(errno)}));
-        if(stat(key.c_str(),  &statBuf) != 0) throw InetException(mergeStrings({"InetServerSSL : Key File : ", strerror(errno)}));
+        if(access(cert.c_str(), R_OK) != 0) throw InetException(mergeStrings({"InetServerSSL : Certificate File Access : ", strerror(errno)}));
+        if(access(key.c_str(),  R_OK) != 0) throw InetException(mergeStrings({"InetServerSSL : Key File Access : ", strerror(errno)}));
         
         setReadFunc( InetSSL::readSSL );
         setWriteFunc( InetSSL::writeSSL );

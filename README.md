@@ -66,7 +66,9 @@ Example:
 ```
 
 * Server machine: 
+```
   nnvpn -s -f /home/test/vpn/data/nnvpn.lua
+```
 
 * To test the connectivity, it's possible to use a simple html file:
 ```

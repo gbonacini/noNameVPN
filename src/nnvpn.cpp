@@ -77,6 +77,7 @@ int main(int argc, char** argv){
                 default:
                     debugMode = DEBUG_MODE::STD_DEBUG;
             }
+            Debug::setDebugLevel(debugMode);
     }
 
     uint16_t         port         { 0 };

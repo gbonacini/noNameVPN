@@ -39,6 +39,7 @@
 
 #include <anyexcept.hpp>
 #include <ConceptsLib.hpp>
+#include <debug.hpp>
 
 namespace inetlib {
 
@@ -282,6 +283,7 @@ namespace inetlib {
             size_t                  bufferSize;
             int                     nfdsTun      { -1 };    
             std::vector<char>       buff;
+            debugmode::DEBUG_MODE   debugMode  { debugmode::ERR_DEBUG };
     
         public:
             NnVpnClient(std::string pem,   std::string key, 
@@ -302,6 +304,7 @@ namespace inetlib {
             size_t                  bufferSize;
             int                     nfdsTun      { -1 };    
             std::vector<char>       buff;
+            debugmode::DEBUG_MODE   debugMode  { debugmode::ERR_DEBUG };
     
         public:
             NnVpnServer(std::string pem,   std::string key, 

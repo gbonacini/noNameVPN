@@ -29,6 +29,7 @@
 #include <StringUtils.hpp>
 #include <Types.hpp>
 
+
 namespace inetlib{
 
 using std::copy_n,
@@ -37,7 +38,10 @@ using std::copy_n,
       std::to_string,
       inetlib::InetException,
       typeutils::safeSizeRange,
-      stringutils::mergeStrings;
+      stringutils::mergeStrings,
+      stringutils::trace,
+      debugmode::Debug,
+      debugmode::DEBUG_MODE;
 
 Tun::Tun(string dev)  anyexcept
    :  deviceName { dev }
@@ -94,6 +98,7 @@ void Tun::init(string tunIpString, string tunMaskString)  anyexcept{
     }
 
     deviceName = ifreq.ifr_name;
+    if(sock >= 0) close(sock);
 }
 
 const string& Tun::getDeviceName(void)  const noexcept{
@@ -105,7 +110,7 @@ int Tun::getTunFd(void) const noexcept{
 }
 
 NnVpnClient::NnVpnClient(string pem, string key, string paddr, string pport, string dev, size_t buffSize) anyexcept
-   : Tun{dev}, sslClient { pem, key, paddr.c_str(), pport.c_str()}, bufferSize { buffSize }
+   : Tun{dev}, sslClient { pem, key, paddr.c_str(), pport.c_str()}, bufferSize { buffSize }, debugMode { Debug::getDebugLevel() }
 { 
     buff.resize(bufferSize);
 }
@@ -148,6 +153,7 @@ void  NnVpnClient::start(void) anyexcept{
                          [[unlikely]]  case -1:
                             throw InetException(mergeStrings({"NnVpnClient::start : TUN Read error: ", strerror(errno)}));
                          [[likely]]    default:
+                            if(debugMode >= DEBUG_MODE::VERBOSE_DEBUG) trace("READ TUN -> SSL WRITE:", reinterpret_cast<uint8_t*>(buff.data()), buff.size());
                             ssize_t written { 0 };
                             while( written < readFromTun){
                                 int nbytes { sslClient.writeSSLBuffer(buff.data() + written, safeSizeRange<int>(readFromTun - written))};
@@ -177,6 +183,7 @@ void  NnVpnClient::start(void) anyexcept{
                                     throw InetException(mergeStrings({"NnVpnClient::start : readSSL error : ", to_string(errCode)}));
                            }
                       }
+                      if(debugMode >= DEBUG_MODE::VERBOSE_DEBUG) trace("READ SSL -> TUN WRITE:",reinterpret_cast<uint8_t*>(buff.data()), buff.size());
                       ssize_t written { 0 };
                       while( written < readFromSsl){
                           ssize_t nbytes { write(tunFd, buff.data() + written, readFromSsl - written) };
@@ -192,7 +199,7 @@ void  NnVpnClient::start(void) anyexcept{
 }
 
 NnVpnServer::NnVpnServer(string pem,   string key, string saddr, string sport, string dev, size_t buffSize) anyexcept
-   : Tun{dev}, sslServer { pem, key}, srvAddr { saddr } , srvPort { sport }, bufferSize { buffSize }
+   : Tun{dev}, sslServer { pem, key}, srvAddr { saddr } , srvPort { sport }, bufferSize { buffSize }, debugMode { Debug::getDebugLevel() }
 { 
     buff.resize(bufferSize);
 }

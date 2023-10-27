@@ -68,12 +68,6 @@ Example:
 * Server machine: 
   nnvpn -s -f /home/test/vpn/data/nnvpn.lua
 
-* Launching the previous commands, TUN devices will be created on the server and client machine. Each interface requires an IP address and activation, the following example cover this point:
-```
-sudo ip addr add 10.0.0.1/24 dev tun222
-sudo ip link set dev tun222 up 
-```
-
 * To test the connectivity, it's possible to use a simple html file:
 ```
 <!DOCTYPE html>

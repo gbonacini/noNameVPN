@@ -33,6 +33,12 @@ it specifies as string the server listening IP address or the remote server addr
 .IP Port section
 it specifies as number the server listening IP port or the remote server port in case of client mode, example:
 .B  port = 8181
+.IP TUN Addess section
+it specifies as string the TUN interface IP address, example:
+.B  tunaddress = "10.0.0.1"
+.IP TUN Netmask section
+it specifies as string the TUN interface netmask, example:
+.B  tunmask = "255.255.255.0"
 .IP Certificate section
 it specifies the path of OpenSSL pem file, example:
 .B  cert = "/home/test/.keys/server.pem"

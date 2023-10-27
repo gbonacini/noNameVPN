@@ -31,7 +31,7 @@
 
 namespace inetlib{
 
-using std::copy,
+using std::copy_n,
       std::string,
       std::cerr,
       std::to_string,
@@ -46,17 +46,52 @@ Tun::Tun(string dev)  anyexcept
     copy_n(deviceName.begin(), deviceName.size() >= IFNAMSIZ ? IFNAMSIZ - 1 : deviceName.size(), ifreq.ifr_name);
 }
 
- Tun::~Tun(void) noexcept{
-     if(tunfd > 0) close(tunfd);
- }
+Tun::~Tun(void) noexcept{
+    if(tunfd > 0) close(tunfd);
+}
 
-void Tun::init(void)  anyexcept{
+void Tun::init(string tunIpString, string tunMaskString)  anyexcept{
     signal(SIGPIPE, SIG_IGN);
-    tunfd = open(cloneDev.c_str(),  O_RDWR | O_CLOEXEC );
-    if( tunfd < 0)
-        throw( InetException( mergeStrings({ "Error opening TUN cloning device: ", strerror(errno)}) ) );
+    tunfd = open(cloneDev.c_str(), O_RDWR);
+    if(tunfd < 0)
+        throw( InetException( mergeStrings({ "Tun::init : Error opening TUN cloning device: ", strerror(errno)}) ) );
     if(ioctl(tunfd, TUNSETIFF, reinterpret_cast<void*>(&ifreq)) < 0)
-        throw( InetException( mergeStrings({ "Error setting TUNSETIFF on TUN fd: ", strerror(errno)}) ) );
+        throw( InetException( mergeStrings({ "Tun::init : Error setting TUNSETIFF on TUN fd: ", strerror(errno)}) ) );
+    
+    SockaddrIn   addr {};
+    int          sock { socket(AF_INET, SOCK_DGRAM, 0) };
+
+    if(inet_pton(AF_INET, tunIpString.c_str(), &addr.sin_addr.s_addr) != 1)
+        throw( InetException( "Tun::init : Invalid TUN IP string" ) );
+
+    addr.sin_family = AF_INET;
+    memcpy( &(ifreq.ifr_addr), &addr, sizeof(Sockaddr) );
+    if(ioctl(sock, SIOCSIFADDR, &ifreq) == -1 ){
+        if(sock >= 0) close(sock);
+        throw( InetException( mergeStrings({ "Tun::init : Error setting IP address on TUN : ", strerror(errno)}) ) );
+    }
+
+    if(ioctl(sock, SIOCGIFFLAGS, &ifreq) == -1) {
+        throw( InetException( mergeStrings({ "Tun::init : Error setting Flags on TUN : ", strerror(errno)}) ) );
+        if(sock >= 0) close(sock);
+    }
+    
+    if(inet_pton(AF_INET, tunMaskString.c_str(), &addr.sin_addr.s_addr) != 1 )
+        throw( InetException( "Tun::init : Invalid TUN Netmask string" ) );
+
+    memcpy( &(ifreq.ifr_addr), &addr, sizeof(Sockaddr) );
+    if(ioctl(sock, SIOCSIFNETMASK, &ifreq)  == -1) {
+        throw( InetException( mergeStrings({ "Tun::init : Error setting Netmask on TUN : ", strerror(errno)}) ) );
+        if(sock >= 0) close(sock);
+    }
+
+    ifreq.ifr_flags |= IFF_UP;
+    ifreq.ifr_flags |= IFF_RUNNING;
+
+    if(ioctl(sock, SIOCSIFFLAGS, &ifreq) == -1)  {
+        throw( InetException( mergeStrings({ "Tun::init : Error Bringing on TUN device: ", strerror(errno)}) ) );
+        if(sock >= 0) close(sock);
+    }
 
     deviceName = ifreq.ifr_name;
 }
@@ -78,8 +113,8 @@ NnVpnClient::NnVpnClient(string pem, string key, string paddr, string pport, str
 NnVpnClient::~NnVpnClient(void) noexcept
 {}
 
-void  NnVpnClient::init(void) anyexcept{
-    Tun::init();
+void  NnVpnClient::init(string tunIpString, string tunMaskString) anyexcept{
+    Tun::init(tunIpString, tunMaskString);
     sslClient.init();
 }
 
@@ -165,8 +200,8 @@ NnVpnServer::NnVpnServer(string pem,   string key, string saddr, string sport, s
 NnVpnServer::~NnVpnServer(void) noexcept
 {}
 
-void  NnVpnServer::init(void) anyexcept{
-    Tun::init();
+void  NnVpnServer::init(string tunIpString, string tunMaskString) anyexcept{
+    Tun::init(tunIpString, tunMaskString);
     sslServer.init(srvAddr.c_str(), srvPort.c_str());
 }
 

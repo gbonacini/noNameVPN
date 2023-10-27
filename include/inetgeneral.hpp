@@ -268,11 +268,12 @@ namespace inetlib {
             int                             tunfd      { -1 };
     
         public:
-            explicit Tun(std::string dev)                           anyexcept;                
-            ~Tun(void)                                              noexcept;
-            void                   init(void)                       anyexcept;
-            const std::string&     getDeviceName(void)     const    noexcept;
-            int                    getTunFd(void)          const    noexcept;
+            explicit Tun(std::string dev)                                  anyexcept;                
+            ~Tun(void)                                                     noexcept;
+            void                   init(std::string tunIpString, 
+                                        std::string tunMaskString)         anyexcept;
+            const std::string&     getDeviceName(void)     const           noexcept;
+            int                    getTunFd(void)          const           noexcept;
     };
     
     class NnVpnClient : public Tun{
@@ -285,11 +286,12 @@ namespace inetlib {
         public:
             NnVpnClient(std::string pem,   std::string key, 
                        std::string paddr, std::string pport, 
-                       std::string dev,   size_t buffSize=1500)     anyexcept;
-            ~NnVpnClient(void)                                       noexcept;
+                       std::string dev,   size_t buffSize=1500)            anyexcept;
+            ~NnVpnClient(void)                                             noexcept;
     
-            void                   init(void)                       anyexcept;
-            void                   start(void)                      anyexcept;
+            void                   init(std::string tunIpString, 
+                                        std::string tunMaskString)         anyexcept;
+            void                   start(void)                             anyexcept;
     };
 
     class NnVpnServer : public Tun{
@@ -304,11 +306,12 @@ namespace inetlib {
         public:
             NnVpnServer(std::string pem,   std::string key, 
                        std::string saddr, std::string sport, 
-                       std::string dev,   size_t buffSize=1500)     anyexcept;
-            ~NnVpnServer(void)                                       noexcept;
+                       std::string dev,   size_t buffSize=1500)            anyexcept;
+            ~NnVpnServer(void)                                             noexcept;
 
-            void                   init(void)                       anyexcept;
-            void                   start(void)                      anyexcept;
+            void                   init(std::string tunIpString, 
+                                        std::string tunMaskString)         anyexcept;
+            void                   start(void)                             anyexcept;
     };
 
 } //End Namespace

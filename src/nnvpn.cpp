@@ -82,6 +82,8 @@ int main(int argc, char** argv){
     uint16_t         port         { 0 };
     long             psize        { MAX_PAYLOAD };
     string           address      { "" },
+                     tunaddress   { "" },
+                     tunmask      { "" },
                      cert         { "" },
                      key          { "" },
                      device       { "" },
@@ -97,6 +99,8 @@ int main(int argc, char** argv){
              cfg.addLoadableVariable("key", "");
              cfg.addLoadableVariable("device", "");
              cfg.addLoadableVariable("log", "");
+             cfg.addLoadableVariable("tunaddress", "");
+             cfg.addLoadableVariable("tunmask", "");
     
              cfg.loadConfig();
     
@@ -108,6 +112,8 @@ int main(int argc, char** argv){
              device   = cfg.getConf("device").getText();
              key      = cfg.getConf("key").getText();
              logFile  = cfg.getConf("log").getText();
+             cfg.getConf("tunaddress").getIp(tunaddress);
+             cfg.getConf("tunmask").getIp(tunmask);
          } catch(ConfigFileException& ex){
              ret = 1;
              string msg {"Error loading configuration file: "};
@@ -146,11 +152,11 @@ int main(int argc, char** argv){
          try{
              if(isServer){
                   NnVpnServer svpn(cert, key, address, to_string(port), device, psize);
-                  svpn.init();
+                  svpn.init(tunaddress, tunmask);
                   svpn.start();
              } else {
                   NnVpnClient cvpn(cert, key, address, to_string(port), device, psize);;
-                  cvpn.init();
+                  cvpn.init(tunaddress, tunmask);
                   cvpn.start();
              }
          }catch(InetException& ex){

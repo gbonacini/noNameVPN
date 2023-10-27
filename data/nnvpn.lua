@@ -12,6 +12,20 @@ address = "192.168.178.113"
 --]]
 port = 8181
 
+--[[ Flag:           tunaddress
+     Type:           String representing TUN IP address
+     Synopsis:       Set IP address assigned TUN interface
+     Valid values:   A valid IPv4 address
+--]]
+tunaddress = "10.0.0.1"
+
+--[[ Flag:           tunmask
+     Type:           String representing TUN netmask
+     Synopsis:       Set netmask assigned TUN interface 
+     Valid values:   A valid IPv4 address
+--]]
+tunmask = "255.255.255.0"
+
 --[[ Flag:           cert
      Type:           String representing SSL cetificate full path
      Synopsis:       Set value to specify the SSL cetificate used to connect cliente/server full path

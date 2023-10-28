@@ -20,7 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <signal.h>
+#include <csignal>
 
 #include <algorithm>
 #include <iostream>
@@ -36,6 +36,7 @@ using std::copy_n,
       std::string,
       std::cerr,
       std::to_string,
+      std::signal,
       inetlib::InetException,
       typeutils::safeSizeRange,
       stringutils::mergeStrings,
